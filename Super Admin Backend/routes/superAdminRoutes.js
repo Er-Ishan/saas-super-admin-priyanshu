@@ -1,11 +1,25 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import db from "../config/db.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
+    ? Buffer.from(process.env.ENCRYPTION_KEY, 'hex')
+    : crypto.scryptSync('saas-super-admin-secret', 'parking-salt', 32);
+
+function encryptField(text) {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    const authTag = cipher.getAuthTag().toString('hex');
+    return { iv: iv.toString('hex'), encrypted: encrypted + ':' + authTag };
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -547,21 +561,138 @@ router.get("/companies/:id", async (req, res) => {
 
 router.patch("/companies/:id", async (req, res) => {
     const { id } = req.params;
-    const { name, email, domain, mobile_no, address, support_email_address, support_contact_no } = req.body;
+    const {
+        name, email, domain, mobile_no, address,
+        support_email_address, support_contact_no,
+        business_type, business_catrgory, office_hours, ref_prefix,
+        registration_no, owner_name
+    } = req.body;
 
     try {
         await db.promise().query(
-            `UPDATE companies 
-             SET name = ?, email = ?, domain = ?, mobile_no = ?, address = ?, 
-                 support_email_address = ?, support_contact_no = ? 
+            `UPDATE companies
+             SET name = ?, email = ?, domain = ?, mobile_no = ?, address = ?,
+                 support_email_address = ?, support_contact_no = ?,
+                 business_type = ?, business_catrgory = ?, office_hours = ?,
+                 ref_prefix = ?, registration_no = ?, owner_name = ?
              WHERE id = ?`,
-            [name, email, domain || null, mobile_no || null, address || null, 
-             support_email_address || null, support_contact_no || null, id]
+            [
+                name, email, domain || null, mobile_no || null, address || null,
+                support_email_address || null, support_contact_no || null,
+                business_type || 'individual', business_catrgory || 'portal',
+                office_hours || null, ref_prefix || 'BKG',
+                registration_no || null, owner_name || null, id
+            ]
         );
         res.json({ success: true, message: "Company updated successfully" });
     } catch (error) {
         console.error("Update Company Error:", error);
         res.status(500).json({ success: false, message: "Failed to update company" });
+    }
+});
+
+router.get("/companies/:id/email-settings", async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await db.promise().query(
+            `SELECT id, smtp_host, smtp_port, smtp_username, smtp_encryption,
+                    from_email, from_name, reply_email, cc_email, bcc_email, active
+             FROM company_email_settings WHERE company_id = ? LIMIT 1`,
+            [id]
+        );
+        res.json({ success: true, data: rows[0] || null });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.put("/companies/:id/email-settings", async (req, res) => {
+    const { id } = req.params;
+    const { smtp_host, smtp_port, smtp_username, smtp_password, smtp_encryption, from_email, from_name, reply_email, cc_email, bcc_email } = req.body;
+
+    try {
+        const [existing] = await db.promise().query("SELECT id FROM company_email_settings WHERE company_id = ?", [id]);
+        const nonSecretFields = [smtp_host, smtp_port || 587, smtp_username, smtp_encryption || 'tls', from_email, from_name || null, reply_email || null, cc_email || null, bcc_email || null];
+
+        if (existing.length > 0) {
+            if (smtp_password) {
+                const { iv: passIv, encrypted: passEnc } = encryptField(smtp_password);
+                await db.promise().query(
+                    `UPDATE company_email_settings SET smtp_host=?, smtp_port=?, smtp_username=?, smtp_password=?, smtp_password_iv=?, smtp_encryption=?, from_email=?, from_name=?, reply_email=?, cc_email=?, bcc_email=? WHERE company_id=?`,
+                    [...nonSecretFields.slice(0, 3), passEnc, passIv, ...nonSecretFields.slice(3), id]
+                );
+            } else {
+                await db.promise().query(
+                    `UPDATE company_email_settings SET smtp_host=?, smtp_port=?, smtp_username=?, smtp_encryption=?, from_email=?, from_name=?, reply_email=?, cc_email=?, bcc_email=? WHERE company_id=?`,
+                    [...nonSecretFields, id]
+                );
+            }
+        } else {
+            const { iv: passIv, encrypted: passEnc } = encryptField(smtp_password || '');
+            await db.promise().query(
+                `INSERT INTO company_email_settings (company_id, smtp_host, smtp_port, smtp_username, smtp_password, smtp_password_iv, smtp_encryption, from_email, from_name, reply_email, cc_email, bcc_email, active, entered_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Y', 0)`,
+                [id, smtp_host, smtp_port || 587, smtp_username, passEnc, passIv, smtp_encryption || 'tls', from_email, from_name || null, reply_email || null, cc_email || null, bcc_email || null]
+            );
+        }
+        res.json({ success: true, message: "Email settings updated successfully" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.get("/companies/:id/payment-gateway", async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await db.promise().query(
+            "SELECT id, acc_name, public_key, mode, active FROM company_payment_gateway WHERE company_id = ? LIMIT 1",
+            [id]
+        );
+        res.json({ success: true, data: rows[0] || null });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.put("/companies/:id/payment-gateway", async (req, res) => {
+    const { id } = req.params;
+    const { acc_name, public_key, key_secret, webhook_secret, mode } = req.body;
+
+    try {
+        const [existing] = await db.promise().query("SELECT id FROM company_payment_gateway WHERE company_id = ?", [id]);
+
+        if (existing.length > 0) {
+            if (key_secret) {
+                const { iv: secretIv, encrypted: secretEnc } = encryptField(key_secret);
+                let webhookEnc = null, webhookIv = null;
+                if (webhook_secret) {
+                    const { iv, encrypted } = encryptField(webhook_secret);
+                    webhookEnc = encrypted; webhookIv = iv;
+                }
+                await db.promise().query(
+                    `UPDATE company_payment_gateway SET acc_name=?, public_key=?, key_secret=?, key_secret_iv=?, webhook_secret=?, webhook_secret_iv=?, mode=? WHERE company_id=?`,
+                    [acc_name || 'stripe', public_key, secretEnc, secretIv, webhookEnc, webhookIv, mode || 'test', id]
+                );
+            } else {
+                await db.promise().query(
+                    "UPDATE company_payment_gateway SET acc_name=?, public_key=?, mode=? WHERE company_id=?",
+                    [acc_name || 'stripe', public_key, mode || 'test', id]
+                );
+            }
+        } else {
+            const { iv: secretIv, encrypted: secretEnc } = encryptField(key_secret || '');
+            let webhookEnc = null, webhookIv = null;
+            if (webhook_secret) {
+                const { iv, encrypted } = encryptField(webhook_secret);
+                webhookEnc = encrypted; webhookIv = iv;
+            }
+            await db.promise().query(
+                `INSERT INTO company_payment_gateway (acc_name, public_key, key_secret, key_secret_iv, webhook_secret, webhook_secret_iv, mode, active, company_id, entered_by) VALUES (?, ?, ?, ?, ?, ?, ?, 'N', ?, 0)`,
+                [acc_name || 'stripe', public_key, secretEnc, secretIv, webhookEnc, webhookIv, mode || 'test', id]
+            );
+        }
+        res.json({ success: true, message: "Payment gateway updated successfully" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 
@@ -683,7 +814,18 @@ router.patch("/companies/:id/logo", upload.single('logo'), async (req, res) => {
 });
 
 router.post("/onboard-company", upload.single('logo'), async (req, res) => {
-    const { name, email, domain, mobile_no, address, support_email_address, support_contact_no } = req.body;
+    const {
+        name, email, domain, mobile_no, address,
+        support_email_address, support_contact_no,
+        business_type, business_catrgory, office_hours, ref_prefix,
+        registration_no, owner_name
+    } = req.body;
+
+    let emailSettings = null;
+    let paymentGateway = null;
+    try { emailSettings = req.body.emailSettings ? JSON.parse(req.body.emailSettings) : null; } catch (e) {}
+    try { paymentGateway = req.body.paymentGateway ? JSON.parse(req.body.paymentGateway) : null; } catch (e) {}
+
     let logo_url = null;
 
     if (req.file) {
@@ -719,8 +861,19 @@ router.post("/onboard-company", upload.single('logo'), async (req, res) => {
         let companyId;
         try {
             const [companyResult] = await connection.query(
-                "INSERT INTO companies (name, email, domain, mobile_no, address, logo_url, active, support_email_address, support_contact_no) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)",
-                [name, email, domain || null, mobile_no || null, address || null, logo_url, support_email_address || null, support_contact_no || null]
+                `INSERT INTO companies
+                 (name, email, domain, mobile_no, address, logo_url, active,
+                  support_email_address, support_contact_no,
+                  business_type, business_catrgory, office_hours, ref_prefix,
+                  registration_no, owner_name)
+                 VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    name, email, domain || null, mobile_no || null, address || null, logo_url,
+                    support_email_address || null, support_contact_no || null,
+                    business_type || 'individual', business_catrgory || 'portal',
+                    office_hours || null, ref_prefix || 'BKG',
+                    registration_no || null, owner_name || null
+                ]
             );
             companyId = companyResult.insertId;
         } catch (err) {
@@ -771,6 +924,46 @@ router.post("/onboard-company", upload.single('logo'), async (req, res) => {
             await connection.query(
                 "INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES ?",
                 [values]
+            );
+        }
+
+        // 6. Insert email settings if provided
+        if (emailSettings && emailSettings.smtp_host && emailSettings.smtp_password) {
+            const { iv: passIv, encrypted: passEnc } = encryptField(emailSettings.smtp_password);
+            await connection.query(
+                `INSERT INTO company_email_settings
+                 (company_id, smtp_host, smtp_port, smtp_username, smtp_password, smtp_password_iv,
+                  smtp_encryption, from_email, from_name, reply_email, cc_email, bcc_email, active, entered_by)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Y', 0)`,
+                [
+                    companyId, emailSettings.smtp_host, emailSettings.smtp_port || 587,
+                    emailSettings.smtp_username, passEnc, passIv,
+                    emailSettings.smtp_encryption || 'tls', emailSettings.from_email,
+                    emailSettings.from_name || null, emailSettings.reply_email || null,
+                    emailSettings.cc_email || null, emailSettings.bcc_email || null
+                ]
+            );
+        }
+
+        // 7. Insert payment gateway if provided
+        if (paymentGateway && paymentGateway.public_key && paymentGateway.key_secret) {
+            const { iv: secretIv, encrypted: secretEnc } = encryptField(paymentGateway.key_secret);
+            let webhookEnc = null, webhookIv = null;
+            if (paymentGateway.webhook_secret) {
+                const { iv, encrypted } = encryptField(paymentGateway.webhook_secret);
+                webhookEnc = encrypted;
+                webhookIv = iv;
+            }
+            await connection.query(
+                `INSERT INTO company_payment_gateway
+                 (acc_name, public_key, key_secret, key_secret_iv, webhook_secret, webhook_secret_iv,
+                  mode, active, company_id, entered_by)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'N', ?, 0)`,
+                [
+                    paymentGateway.acc_name || 'stripe', paymentGateway.public_key,
+                    secretEnc, secretIv, webhookEnc, webhookIv,
+                    paymentGateway.mode || 'test', companyId
+                ]
             );
         }
 

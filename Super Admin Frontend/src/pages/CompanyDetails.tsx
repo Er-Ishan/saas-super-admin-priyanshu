@@ -57,16 +57,6 @@ const CompanyDetails: React.FC = () => {
     email_password: '',
     email_host: ''
   });
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editFormData, setEditFormData] = useState({
-    name: '',
-    email: '',
-    domain: '',
-    mobile_no: '',
-    address: '',
-    support_email_address: '',
-    support_contact_no: ''
-  });
   const [logoLoading, setLogoLoading] = useState(false);
 
   useEffect(() => {
@@ -150,37 +140,6 @@ const CompanyDetails: React.FC = () => {
       });
     }
     setShowParsingModal(true);
-  };
-
-  const openEditModal = () => {
-    if (!data) return;
-    setEditFormData({
-      name: data.name,
-      email: data.email,
-      domain: data.domain,
-      mobile_no: data.mobile_no,
-      address: data.address,
-      support_email_address: data.support_email_address || '',
-      support_contact_no: data.support_contact_no || ''
-    });
-    setShowEditModal(true);
-  };
-
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUpdating(prev => ({ ...prev, active: true })); // using active as a generic 'saving' flag for simplicity or add a new one
-    try {
-      const response = await api.patch(`/companies/${id}`, editFormData);
-      if (response.data.success) {
-        setShowEditModal(false);
-        fetchCompanyDetails();
-      }
-    } catch (err: any) {
-      console.error('Error updating company details:', err);
-      alert(err.response?.data?.message || 'Failed to update company details');
-    } finally {
-      setIsUpdating(prev => ({ ...prev, active: false }));
-    }
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -357,7 +316,7 @@ const CompanyDetails: React.FC = () => {
               General Information
             </h3>
             <button
-              onClick={openEditModal}
+              onClick={() => navigate(`/companies/${id}/settings`)}
               className="p-2 text-slate-500 hover:text-sky-400 hover:bg-sky-500/10 rounded-xl transition-all cursor-pointer"
               title="Edit Details"
             >
@@ -714,143 +673,6 @@ const CompanyDetails: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Company Details Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowEditModal(false)}
-            className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-2xl overflow-hidden"
-          >
-            <div className="p-8 border-b border-slate-800 flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-white mb-1">Edit Company Details</h2>
-                <p className="text-xs text-slate-500 font-medium uppercase tracking-widest">Update general information</p>
-              </div>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-center text-slate-400 transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleEditSubmit} className="p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Company Legal Name</label>
-                  <div className="relative">
-                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                    <input
-                      required
-                      type="text"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-sky-500 outline-none transition-all"
-                      value={editFormData.name}
-                      onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Admin Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                    <input
-                      required
-                      type="email"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-sky-500 outline-none transition-all"
-                      value={editFormData.email}
-                      onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Domain</label>
-                  <div className="relative">
-                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                    <input
-                      type="text"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-sky-500 outline-none transition-all"
-                      value={editFormData.domain}
-                      onChange={(e) => setEditFormData({ ...editFormData, domain: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Support Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                    <input
-                      type="email"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-sky-500 outline-none transition-all text-sky-400"
-                      value={editFormData.support_email_address}
-                      onChange={(e) => setEditFormData({ ...editFormData, support_email_address: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Support Contact</label>
-                  <div className="relative">
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                    <input
-                      type="text"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-sky-500 outline-none transition-all text-sky-400"
-                      value={editFormData.support_contact_no}
-                      onChange={(e) => setEditFormData({ ...editFormData, support_contact_no: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Office Address</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-4 top-4 text-slate-500 w-5 h-5" />
-                    <textarea
-                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-sky-500 outline-none transition-all h-24"
-                      value={editFormData.address}
-                      onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="flex-1 py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isUpdating.active}
-                  className="flex-[2] py-4 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-bold shadow-lg shadow-sky-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isUpdating.active ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <Save size={18} />
-                      Update Information
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
     </>
   );
 };

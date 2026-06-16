@@ -16,6 +16,8 @@ import AccessControl from './pages/AccessControl';
 import Users from './pages/Users';
 import SupportCenter from './pages/SupportCenter';
 import Airports from './pages/Airports';
+import OnboardCompany from './pages/OnboardCompany';
+import CompanySettings from './pages/CompanySettings';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -55,7 +57,9 @@ function App() {
             <Route index element={<Overview />} />
             <Route path="field-mappings" element={<FieldMappings />} />
             <Route path="companies" element={<Companies />} />
+            <Route path="companies/onboard" element={<OnboardCompany />} />
             <Route path="companies/:id" element={<CompanyDetails />} />
+            <Route path="companies/:id/settings" element={<CompanySettings />} />
             <Route path="bookings" element={<BookingPage />} />
             <Route path="suppliers" element={<Suppliers />} />
             <Route path="suppliers/mapping/:id" element={<SupplierEmailMapping />} />
