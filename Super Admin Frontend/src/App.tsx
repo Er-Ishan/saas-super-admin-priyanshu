@@ -18,6 +18,8 @@ import SupportCenter from './pages/SupportCenter';
 import Airports from './pages/Airports';
 import OnboardCompany from './pages/OnboardCompany';
 import CompanySettings from './pages/CompanySettings';
+import RegisterSupplier from './pages/RegisterSupplier';
+import EditSupplier from './pages/EditSupplier';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -62,6 +64,8 @@ function App() {
             <Route path="companies/:id/settings" element={<CompanySettings />} />
             <Route path="bookings" element={<BookingPage />} />
             <Route path="suppliers" element={<Suppliers />} />
+            <Route path="suppliers/register" element={<RegisterSupplier />} />
+            <Route path="suppliers/:id/edit" element={<EditSupplier />} />
             <Route path="suppliers/mapping/:id" element={<SupplierEmailMapping />} />
             <Route 
               path="access-control" 

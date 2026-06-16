@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Truck, Plus, Mail, Building2, Loader2, AlertCircle, X, Settings2, Trash2, CheckCircle2, Globe, Tags } from 'lucide-react';
+import { Truck, Plus, Mail, Building2, Loader2, AlertCircle, X, Settings2, Trash2, CheckCircle2, Globe, Tags, Pencil } from 'lucide-react';
+
 import api from '../lib/axios';
 import { cn } from '../lib/utils';
 
@@ -17,7 +18,8 @@ interface GlobalSupplier {
   director_email: string;
   director_phone: string;
   supplier_active: number;
-  all_sender_emails: string[]; // Added aggregated emails
+  all_sender_emails: string[];
+  commission: number;
 }
 
 interface CompanySupplier {
@@ -49,21 +51,8 @@ const Suppliers: React.FC = () => {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>(searchParams.get('companyId') || '');
 
   const [loading, setLoading] = useState(true);
-  const [showRegistryModal, setShowRegistryModal] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [registryFormData, setRegistryFormData] = useState({
-    supplier_name: '',
-    reg_no: '',
-    supplier_contact: '',
-    supplier_email: '',
-    supplier_address: '',
-    from_email_addresses: [''] as string[], // Changed to array
-    director_name: '',
-    director_email: '',
-    director_phone: ''
-  });
 
   const [assignmentFormData, setAssignmentFormData] = useState({
     company_id: '',
@@ -108,41 +97,6 @@ const Suppliers: React.FC = () => {
       setCompanySuppliers(response.data.data);
     } catch (err) {
       console.error('Error fetching company suppliers:', err);
-    }
-  };
-
-  const handleAddRegistry = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Check if supplier name already exists
-    const duplicate = globalSuppliers.find(
-      s => s.supplier_name.toLowerCase().trim() === registryFormData.supplier_name.toLowerCase().trim()
-    );
-
-    if (duplicate) {
-      alert(`The supplier "${registryFormData.supplier_name}" already exists in the registry.`);
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const response = await api.post('add-supplier', {
-        ...registryFormData,
-        from_email_address: registryFormData.from_email_addresses.filter(e => e.trim())
-      });
-      if (response.data.success) {
-        setShowRegistryModal(false);
-        fetchInitialData();
-        setRegistryFormData({
-          supplier_name: '', reg_no: '', supplier_contact: '', supplier_email: '',
-          supplier_address: '', from_email_addresses: [''], director_name: '',
-          director_email: '', director_phone: ''
-        });
-      }
-    } catch (err) {
-      console.error('Failed to add supplier:', err);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -205,6 +159,16 @@ const Suppliers: React.FC = () => {
     }
   };
 
+  const handleDeleteSupplier = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this supplier from the registry?')) return;
+    try {
+      await api.delete(`suppliers/${id}`);
+      fetchInitialData();
+    } catch (err) {
+      console.error('Failed to delete supplier:', err);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto pb-20 px-4">
       {/* Header */}
@@ -252,7 +216,7 @@ const Suppliers: React.FC = () => {
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-white">Master Supplier Registry</h2>
                 <button
-                  onClick={() => setShowRegistryModal(true)}
+                  onClick={() => navigate('/suppliers/register')}
                   className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl font-bold border border-white/10 transition-all flex items-center gap-2"
                 >
                   <Plus className="w-5 h-5" />
@@ -266,8 +230,9 @@ const Suppliers: React.FC = () => {
                     <tr className="bg-slate-900/50 border-b border-slate-800">
                       <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Supplier</th>
                       <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Master Email (From)</th>
-                      <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Director / Contact</th>
+                      <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Commission</th>
                       <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                      <th className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
@@ -280,7 +245,7 @@ const Suppliers: React.FC = () => {
                             </div>
                             <div>
                               <p className="font-bold text-white">{s.supplier_name}</p>
-                              <p className="text-xs text-slate-500">Reg: {s.reg_no || 'N/A'}</p>
+                              
                             </div>
                           </div>
                         </td>
@@ -295,10 +260,9 @@ const Suppliers: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-5">
-                          <div className="text-sm">
-                            <p className="text-white font-medium">{s.director_name || 'N/A'}</p>
-                            <p className="text-slate-500 text-xs">{s.supplier_contact}</p>
-                          </div>
+                          <span className="text-white font-bold">
+                            {s.commission != null ? `${s.commission}%` : '—'}
+                          </span>
                         </td>
                         <td className="px-6 py-5">
                           <span className={cn(
@@ -307,6 +271,24 @@ const Suppliers: React.FC = () => {
                           )}>
                             {s.supplier_active ? 'Active' : 'Deactivated'}
                           </span>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => navigate(`/suppliers/${s.supplier_id}/edit`)}
+                              className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"
+                              title="Edit supplier"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSupplier(s.supplier_id)}
+                              className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                              title="Delete supplier"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -471,108 +453,6 @@ const Suppliers: React.FC = () => {
         </>
       )}
 
-      {/* Registry Modal */}
-      <AnimatePresence>
-        {showRegistryModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRegistryModal(false)} className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="glass w-full max-w-2xl rounded-3xl overflow-hidden relative z-10 p-8 shadow-2xl border-white/10 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                  <Globe className="w-6 h-6 text-indigo-400" />
-                  Register Master Supplier
-                </h2>
-                <button onClick={() => setShowRegistryModal(false)} className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"><X className="w-6 h-6" /></button>
-              </div>
-
-              <form onSubmit={handleAddRegistry} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Legal Supplier Name</label>
-                    <input required type="text" value={registryFormData.supplier_name} onChange={(e) => setRegistryFormData({ ...registryFormData, supplier_name: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-indigo-500/50 outline-none" placeholder="e.g. Purple Parking LTD" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Registration No</label>
-                    <input type="text" value={registryFormData.reg_no} onChange={(e) => setRegistryFormData({ ...registryFormData, reg_no: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-indigo-500/50 outline-none" placeholder="CRN-12345" />
-                  </div>
-                  <div className="md:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-sm font-medium text-slate-400">Master Parsing Emails (Defaults)</label>
-                      <button
-                        type="button"
-                        onClick={() => setRegistryFormData({
-                          ...registryFormData,
-                          from_email_addresses: [...registryFormData.from_email_addresses, '']
-                        })}
-                        className="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
-                      >
-                        <Plus className="w-3 h-3" />
-                        Add Another
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      {registryFormData.from_email_addresses.map((email, idx) => (
-                        <div key={idx} className="flex gap-2">
-                          <div className="relative flex-1">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                            <input
-                              required
-                              type="email"
-                              value={email}
-                              onChange={(e) => {
-                                const newEmails = [...registryFormData.from_email_addresses];
-                                newEmails[idx] = e.target.value;
-                                setRegistryFormData({ ...registryFormData, from_email_addresses: newEmails });
-                              }}
-                              className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-white focus:ring-2 focus:ring-indigo-500/50 outline-none"
-                              placeholder="noreply@supplier.com"
-                            />
-                          </div>
-                          {registryFormData.from_email_addresses.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newEmails = registryFormData.from_email_addresses.filter((_, i) => i !== idx);
-                                setRegistryFormData({ ...registryFormData, from_email_addresses: newEmails });
-                              }}
-                              className="p-3 text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all border border-slate-800"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-6 bg-slate-900/50 rounded-3xl border border-slate-800 space-y-6">
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider opacity-50">Director Information (Internal)</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-slate-400 mb-2">Director Full Name</label>
-                      <input type="text" value={registryFormData.director_name} onChange={(e) => setRegistryFormData({ ...registryFormData, director_name: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-indigo-500/50 outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-400 mb-2">Director Email</label>
-                      <input type="email" value={registryFormData.director_email} onChange={(e) => setRegistryFormData({ ...registryFormData, director_email: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-indigo-500/50 outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-400 mb-2">Director Phone</label>
-                      <input type="text" value={registryFormData.director_phone} onChange={(e) => setRegistryFormData({ ...registryFormData, director_phone: e.target.value })} className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-4 text-white focus:ring-2 focus:ring-indigo-500/50 outline-none" />
-                    </div>
-                  </div>
-                </div>
-
-                <button type="submit" disabled={isSubmitting} className="w-full bg-white text-slate-950 rounded-2xl py-4 font-bold shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2">
-                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirm Registration"}
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       {/* Assignment Modal */}
       <AnimatePresence>
         {showAssignmentModal && (
@@ -610,7 +490,6 @@ const Suppliers: React.FC = () => {
                       type="button"
                       onClick={() => {
                         setShowAssignmentModal(false);
-                        setShowRegistryModal(true);
                         setActiveTab('registry');
                       }}
                       className="text-indigo-400 hover:text-indigo-300 font-bold transition-colors underline decoration-indigo-400/30 underline-offset-4"

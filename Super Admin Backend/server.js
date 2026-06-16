@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 import path from "path";
 import { fileURLToPath } from "url";
 import db from "./config/db.js";
@@ -78,20 +79,31 @@ app.use(session({
   }
 }));
 
-// Middleware to extract x-company-id header logic for proxy
-// Must run BEFORE routes so handlers can use req.companyId
+// Middleware to extract identity from JWT or explicit headers
+// Must run BEFORE routes so handlers can use req.companyId / req.userId
 app.use((req, res, next) => {
-  const companyId = req.headers["x-company-id"];
-  const userId = req.headers["x-user-id"];
-  
-  if (companyId) {
-    req.companyId = parseInt(companyId, 10);
+  // Explicit header overrides (proxy/gateway pattern)
+  const headerCompanyId = req.headers["x-company-id"];
+  const headerUserId = req.headers["x-user-id"];
+
+  if (headerCompanyId) req.companyId = parseInt(headerCompanyId, 10);
+  if (headerUserId)    req.userId    = parseInt(headerUserId, 10);
+
+  // Fall back to JWT if headers aren't present
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    try {
+      const JWT_SECRET = process.env.JWT_SECRET || "super-admin-secret-key";
+      const decoded = jwt.verify(authHeader.slice(7), JWT_SECRET);
+      if (!req.userId    && decoded.id)    req.userId    = decoded.id;
+      if (!req.companyId && decoded.companyId) req.companyId = decoded.companyId;
+      req.userEmail = decoded.email;
+    } catch (_) {
+      // Invalid/expired token — let route handlers deal with auth
+    }
   }
-  if (userId) {
-    req.userId = parseInt(userId, 10);
-  }
-  
-  console.log(`[BACKEND] ${req.method} ${req.url} - Company: ${companyId}, User: ${userId}`);
+
+  console.log(`[BACKEND] ${req.method} ${req.url} - Company: ${req.companyId ?? "none"}, User: ${req.userEmail ?? req.userId ?? "none"}`);
   next();
 });
 

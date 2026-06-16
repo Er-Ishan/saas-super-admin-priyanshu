@@ -1056,42 +1056,87 @@ router.get("/suppliers", async (req, res) => {
 router.post("/add-supplier", async (req, res) => {
     const {
         supplier_name,
-        reg_no,
-        supplier_contact,
-        supplier_email,
-        supplier_address,
         from_email_address,
-        director_name,
-        director_email,
-        director_phone
+        commission,
     } = req.body;
 
     if (!supplier_name || !from_email_address) {
-        return res.status(400).json({ success: false, message: "Supplier Name and Parsing Email (from_email_address) are required" });
+        return res.status(400).json({ success: false, message: "Supplier Name and Parsing Email are required" });
     }
 
     try {
-        const finalFromEmail = Array.isArray(from_email_address) 
-            ? JSON.stringify(from_email_address) 
+        const finalFromEmail = Array.isArray(from_email_address)
+            ? JSON.stringify(from_email_address)
             : JSON.stringify([from_email_address]);
 
         const [result] = await db.promise().query(
             `INSERT INTO suppliers (
-                supplier_name, reg_no, supplier_contact, supplier_email, 
-                supplier_address, from_email_address, director_name, 
-                director_email, director_phone, supplier_active
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-            [
-                supplier_name, reg_no || '', supplier_contact || '', supplier_email || '',
-                supplier_address || '', finalFromEmail, director_name || '',
-                director_email || '', director_phone || ''
-            ]
+                supplier_name, from_email_address, commission, supplier_active
+            ) VALUES (?, ?, ?, 1)`,
+            [supplier_name, finalFromEmail, parseFloat(commission || 0)]
         );
 
         res.json({ success: true, message: "Supplier added to registry successfully", supplierId: result.insertId });
     } catch (error) {
         console.error("Add Supplier Error:", error);
         res.status(500).json({ success: false, message: "Failed to add supplier to registry" });
+    }
+});
+
+router.get("/suppliers/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await db.promise().query(
+            "SELECT * FROM suppliers WHERE supplier_id = ? LIMIT 1",
+            [id]
+        );
+        if (!rows.length) return res.status(404).json({ success: false, message: "Supplier not found" });
+        const row = rows[0];
+        try {
+            row.from_email_address = typeof row.from_email_address === 'string'
+                ? JSON.parse(row.from_email_address)
+                : row.from_email_address;
+        } catch (e) { /* leave as-is */ }
+        res.json({ success: true, data: row });
+    } catch (error) {
+        console.error("Get Supplier Error:", error);
+        res.status(500).json({ success: false, message: "Failed to fetch supplier" });
+    }
+});
+
+router.put("/suppliers/:id", async (req, res) => {
+    const { id } = req.params;
+    const { supplier_name, from_email_address, commission } = req.body;
+
+    if (!supplier_name || !from_email_address) {
+        return res.status(400).json({ success: false, message: "Supplier Name and Parsing Email are required" });
+    }
+
+    try {
+        const finalFromEmail = Array.isArray(from_email_address)
+            ? JSON.stringify(from_email_address)
+            : JSON.stringify([from_email_address]);
+
+        await db.promise().query(
+            "UPDATE suppliers SET supplier_name = ?, from_email_address = ?, commission = ? WHERE supplier_id = ?",
+            [supplier_name, finalFromEmail, parseFloat(commission || 0), id]
+        );
+
+        res.json({ success: true, message: "Supplier updated successfully" });
+    } catch (error) {
+        console.error("Update Supplier Error:", error);
+        res.status(500).json({ success: false, message: "Failed to update supplier" });
+    }
+});
+
+router.delete("/suppliers/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        await db.promise().query("DELETE FROM suppliers WHERE supplier_id = ?", [id]);
+        res.json({ success: true, message: "Supplier deleted from registry" });
+    } catch (error) {
+        console.error("Delete Supplier Error:", error);
+        res.status(500).json({ success: false, message: "Failed to delete supplier" });
     }
 });
 
