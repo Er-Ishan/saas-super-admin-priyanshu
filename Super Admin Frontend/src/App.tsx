@@ -16,6 +16,7 @@ import AccessControl from './pages/AccessControl';
 import Users from './pages/Users';
 import SupportCenter from './pages/SupportCenter';
 import Airports from './pages/Airports';
+import EditAirport from './pages/EditAirport';
 import OnboardCompany from './pages/OnboardCompany';
 import CompanySettings from './pages/CompanySettings';
 import RegisterSupplier from './pages/RegisterSupplier';
@@ -91,14 +92,15 @@ function App() {
                 </PermissionProtectedRoute>
               } 
             />
-            <Route 
-              path="airports" 
+            <Route
+              path="airports"
               element={
                 <PermissionProtectedRoute permission="access_airports">
                   <Airports />
                 </PermissionProtectedRoute>
-              } 
+              }
             />
+            <Route path="airports/:id/edit" element={<EditAirport />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

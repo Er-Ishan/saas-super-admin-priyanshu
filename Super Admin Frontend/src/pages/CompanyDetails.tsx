@@ -198,114 +198,98 @@ const CompanyDetails: React.FC = () => {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto pb-20 px-4">
+      <div className="w-full min-w-0 pb-10">
       {/* Header & Navigation */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
-        <div className="flex items-center gap-6">
-          <button
-            onClick={() => navigate('/companies')}
-            className="w-12 h-12 bg-slate-900/50 rounded-2xl flex items-center justify-center border border-slate-800 hover:border-sky-500/50 hover:text-sky-400 transition-all text-slate-400 group"
-          >
-            <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-4xl font-bold text-white">{data.name}</h1>
-              <span className={cn(
-                "text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-md mt-1",
-                data.active ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-              )}>
-                {data.active ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-            <p className="text-slate-500 font-medium">Company ID: <span className="text-slate-300">#{data.id}</span></p>
+      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">
+
+        {/* Back button */}
+        <button
+          onClick={() => navigate('/companies')}
+          className="w-10 h-10 shrink-0 bg-slate-900/50 rounded-xl flex items-center justify-center border border-slate-800 hover:border-sky-500/50 hover:text-sky-400 transition-all text-slate-400 group self-start md:self-auto"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+        </button>
+
+        {/* Logo */}
+        <div className="relative group shrink-0">
+          <div className="w-14 h-14 bg-slate-900 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center group-hover:border-sky-500/50 transition-all">
+            {data.logo_url ? (
+              <img
+                src={data.logo_url.startsWith('data:') ? data.logo_url : `${IMAGE_BASE_URL}${data.logo_url}`}
+                alt={data.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Building2 className="w-7 h-7 text-slate-700" />
+            )}
+            {logoLoading && (
+              <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center">
+                <Loader2 className="w-5 h-5 text-sky-500 animate-spin" />
+              </div>
+            )}
           </div>
+          <label className="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-sky-500 rounded-lg flex items-center justify-center cursor-pointer hover:bg-sky-400 transition-colors shadow-lg border-2 border-slate-950">
+            <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+            <Plus className="w-3 h-3 text-white" />
+          </label>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="relative group">
-            <div className="w-16 h-16 bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden flex items-center justify-center group-hover:border-sky-500/50 transition-all">
-              {data.logo_url ? (
-                <img 
-                  src={data.logo_url.startsWith('data:') ? data.logo_url : `${IMAGE_BASE_URL}${data.logo_url}`} 
-                  alt={data.name} 
-                  className="w-full h-full object-cover" 
-                />
-              ) : (
-                <Building2 className="w-8 h-8 text-slate-700" />
-              )}
-              {logoLoading && (
-                <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 text-sky-500 animate-spin" />
-                </div>
-              )}
-            </div>
-            <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-sky-500 rounded-xl flex items-center justify-center cursor-pointer hover:bg-sky-400 transition-colors shadow-lg border-2 border-slate-950">
-              <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
-              <Plus className="w-4 h-4 text-white" />
-            </label>
+        {/* Company name + ID — grows to fill space */}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 mb-0.5">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white truncate">{data.name}</h1>
+            <span className={cn(
+              "text-[9px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-md shrink-0",
+              data.active ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+            )}>
+              {data.active ? 'Active' : 'Inactive'}
+            </span>
           </div>
-          
-          <div className="flex bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 backdrop-blur-sm shadow-xl relative z-20">
+          <p className="text-slate-500 text-xs">Company ID: <span className="text-slate-300">#{data.id}</span></p>
+        </div>
+
+        {/* Service toggle buttons — right side on desktop */}
+        <div className="flex flex-wrap gap-2 shrink-0">
           <button
             onClick={() => toggleStatus('active')}
             disabled={isUpdating.active}
-            className={cn(
-              "flex items-center gap-4 px-5 py-2.5 border-r border-slate-800 transition-all rounded-l-xl disabled:opacity-50",
-              "hover:bg-slate-800/50 group cursor-pointer"
-            )}
-            title={data.active ? "Click to deactivate company" : "Click to activate company"}
+            title={data.active ? 'Click to deactivate' : 'Click to activate'}
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900/50 border border-slate-800 rounded-xl hover:bg-slate-800/50 transition-all disabled:opacity-50 group cursor-pointer"
           >
-            {isUpdating.active ? (
-              <Loader2 className="w-3 h-3 text-emerald-500 animate-spin" />
-            ) : (
-              <div className={cn(
-                "w-3 h-3 rounded-full transition-all duration-500",
-                data.active
-                  ? "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
-                  : "bg-slate-700 shadow-none group-hover:bg-slate-600"
-              )}></div>
-            )}
+            {isUpdating.active
+              ? <Loader2 className="w-3 h-3 text-emerald-500 animate-spin" />
+              : <div className={cn("w-2.5 h-2.5 rounded-full transition-all duration-500 shrink-0",
+                  data.active ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-700 group-hover:bg-slate-500")} />}
             <div className="flex flex-col items-start">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none mb-1">Company Status</span>
-              <span className="text-sm font-bold text-slate-300 leading-none group-hover:text-white transition-colors">Operational</span>
+              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider leading-none">Company</span>
+              <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">Operational</span>
             </div>
           </button>
 
           <button
             onClick={() => toggleStatus('parsing')}
             disabled={isUpdating.parsing}
-            className={cn(
-              "flex items-center gap-4 px-5 py-2.5 transition-all rounded-r-xl disabled:opacity-50",
-              "hover:bg-slate-800/50 group cursor-pointer"
-            )}
-            title={data.email_parsing ? "Click to deactivate email parsing" : "Click to activate email parsing"}
+            title={data.email_parsing ? 'Click to disable parsing' : 'Click to enable parsing'}
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900/50 border border-slate-800 rounded-xl hover:bg-slate-800/50 transition-all disabled:opacity-50 group cursor-pointer"
           >
-            {isUpdating.parsing ? (
-              <Loader2 className="w-3 h-3 text-sky-500 animate-spin" />
-            ) : (
-              <div className={cn(
-                "w-3 h-3 rounded-full transition-all duration-500",
-                data.email_parsing
-                  ? "bg-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.4)]"
-                  : "bg-slate-700 shadow-none group-hover:bg-slate-600"
-              )}></div>
-            )}
+            {isUpdating.parsing
+              ? <Loader2 className="w-3 h-3 text-sky-500 animate-spin" />
+              : <div className={cn("w-2.5 h-2.5 rounded-full transition-all duration-500 shrink-0",
+                  data.email_parsing ? "bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]" : "bg-slate-700 group-hover:bg-slate-500")} />}
             <div className="flex flex-col items-start">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none mb-1">Service Status</span>
-              <span className="text-sm font-bold text-slate-300 leading-none group-hover:text-white transition-colors">Email Parsing</span>
+              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider leading-none">Service</span>
+              <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">Email Parsing</span>
             </div>
           </button>
-          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
         {/* Contact Info Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass p-8 rounded-3xl border-slate-800 relative overflow-hidden group"
+          className="glass p-5 md:p-8 rounded-2xl border-slate-800 relative overflow-hidden group"
         >
           <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
             <Building2 className="w-32 h-32 text-white" />
@@ -386,33 +370,33 @@ const CompanyDetails: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="lg:col-span-2 glass p-8 rounded-3xl border-slate-800 relative overflow-hidden group"
+          className="lg:col-span-2 glass p-5 md:p-8 rounded-2xl border-slate-800 relative overflow-hidden group"
         >
           <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
             <MailWarning className="w-32 h-32 text-white" />
           </div>
 
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-bold text-white flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-indigo-400" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+            <h3 className="text-base md:text-xl font-bold text-white flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0" />
               Email Parsing Pipeline
             </h3>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={openParsingModal}
                 className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 group"
               >
                 <Settings className="w-3.5 h-3.5 group-hover:rotate-45 transition-transform" />
-                {data.parsing_info ? 'Edit Configuration' : 'Setup Pipeline'}
+                {data.parsing_info ? 'Edit Config' : 'Setup Pipeline'}
               </button>
               {data.email_parsing ? (
-                <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-500/20 text-xs font-bold">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  ACTIVE PIPELINE
+                <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2.5 py-1.5 rounded-xl border border-emerald-500/20 text-[10px] font-bold whitespace-nowrap">
+                  <CheckCircle2 className="w-3 h-3" />
+                  ACTIVE
                 </div>
               ) : (
-                <div className="flex items-center gap-2 bg-slate-800 text-slate-500 px-3 py-1.5 rounded-xl border border-slate-700 text-xs font-bold">
-                  <ShieldAlert className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-1.5 bg-slate-800 text-slate-500 px-2.5 py-1.5 rounded-xl border border-slate-700 text-[10px] font-bold">
+                  <ShieldAlert className="w-3 h-3" />
                   DISABLED
                 </div>
               )}
@@ -461,113 +445,121 @@ const CompanyDetails: React.FC = () => {
       </div>
 
       {/* Suppliers Section */}
-      <div className="space-y-8">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-6">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-4">
-            <Truck className="w-7 h-7 text-indigo-500" />
-            Connected Data Partners
-            <span className="bg-slate-800 text-slate-400 px-3 py-1 rounded-lg text-sm font-bold border border-slate-700">
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-3">
+          <h2 className="text-lg md:text-2xl font-bold text-white flex items-center gap-3">
+            <Truck className="w-5 h-5 md:w-7 md:h-7 text-indigo-500 shrink-0" />
+            Connected Suppliers
+            <span className="bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded-lg text-xs font-bold border border-slate-700">
               {data.suppliers.length}
             </span>
           </h2>
           <button
             onClick={() => navigate(`/suppliers?companyId=${data.id}&tab=assignments`)}
-            className="text-sm font-bold text-sky-400 hover:text-sky-300 flex items-center gap-2 group border border-sky-500/10 px-4 py-2 rounded-xl hover:bg-sky-500/5 transition-all"
+            className="text-xs font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1.5 group border border-sky-500/10 px-3 py-2 rounded-xl hover:bg-sky-500/5 transition-all self-start sm:self-auto whitespace-nowrap"
           >
             Manage Assignments
-            <ExternalLink className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {data.suppliers.map((supplier, index) => (
-            <motion.div
-              key={supplier.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 + (index * 0.05) }}
-              className="glass p-6 rounded-3xl border-slate-800 group hover:border-indigo-500/30 transition-all duration-300 relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-600/10 to-transparent -mr-12 -mt-12 rounded-full" />
-
-              <div className="flex items-start justify-between mb-8 relative z-10">
-                <div className="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center border border-slate-700 shadow-inner group-hover:bg-indigo-500/10 group-hover:border-indigo-500/30 transition-colors">
-                  <Truck className="w-6 h-6 text-indigo-400" />
-                </div>
-                <div className={cn(
-                  "px-3 py-1 rounded-full text-[10px] font-bold border flex items-center gap-2",
-                  supplier.active
-                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                    : "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                )}>
-                  <span className={cn("w-1.5 h-1.5 rounded-full", supplier.active ? "bg-emerald-500" : "bg-rose-500")}></span>
-                  {supplier.active ? 'ACTIVE SYNC' : 'PAUSED'}
-                </div>
-              </div>
-
-              <div className="mb-6 relative z-10">
-                <h4 className="text-xl font-bold text-white mb-2 leading-tight">{supplier.supplier_name}</h4>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {(() => {
-                    try {
-                      const emails = typeof supplier.supplier_from_email === 'string' 
-                        ? JSON.parse(supplier.supplier_from_email) 
-                        : supplier.supplier_from_email;
-                      
-                      return Array.isArray(emails) ? emails.map((email: string, idx: number) => (
-                        <div key={idx} className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800 text-[10px] font-mono text-indigo-300">
-                          <Mail className="w-2.5 h-2.5" />
-                          {email}
-                        </div>
-                      )) : (
-                        <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800 text-[10px] font-mono text-indigo-300">
-                          <Mail className="w-2.5 h-2.5" />
-                          {supplier.supplier_from_email}
-                        </div>
-                      );
-                    } catch (e) {
+        {data.suppliers.length === 0 ? (
+          <div className="py-14 text-center bg-slate-900/30 border border-dashed border-slate-800 rounded-xl">
+            <Truck className="w-9 h-9 text-slate-700 mx-auto mb-3" />
+            <p className="text-slate-400 font-medium text-sm">No suppliers connected to this company.</p>
+          </div>
+        ) : (
+          <>
+            <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800">
+                      {['S.N', 'Supplier Name', 'From Emails', 'Master Email', 'Commission', 'Source', 'Status', 'Actions'].map(h => (
+                        <th key={h} className={cn(
+                          "text-[10px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap bg-slate-900/60",
+                          h === 'S.N' || h === 'Commission' || h === 'Status' || h === 'Actions' ? 'text-center' : 'text-left'
+                        )}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/40">
+                    {data.suppliers.map((supplier, index) => {
+                      const emails: string[] = (() => {
+                        try {
+                          const parsed = typeof supplier.supplier_from_email === 'string'
+                            ? JSON.parse(supplier.supplier_from_email)
+                            : supplier.supplier_from_email;
+                          return Array.isArray(parsed) ? parsed : [String(parsed)];
+                        } catch {
+                          return [supplier.supplier_from_email];
+                        }
+                      })();
                       return (
-                        <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800 text-[10px] font-mono text-indigo-300">
-                          <Mail className="w-2.5 h-2.5" />
-                          {supplier.supplier_from_email}
-                        </div>
+                        <motion.tr
+                          key={supplier.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.1 + index * 0.03 }}
+                          className="hover:bg-slate-800/30 transition-colors"
+                        >
+                          <td className="px-4 py-3 text-xs text-slate-600 font-mono text-center whitespace-nowrap">{index + 1}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 bg-slate-800 rounded-lg flex items-center justify-center border border-slate-700 shrink-0">
+                                <Truck className="w-3.5 h-3.5 text-indigo-400" />
+                              </div>
+                              <span className="text-sm font-semibold text-white">{supplier.supplier_name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {emails.map((email, idx) => (
+                                <span key={idx} className="inline-flex items-center gap-1 bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800 text-[10px] font-mono text-indigo-300">
+                                  <Mail className="w-2.5 h-2.5 shrink-0" />{email}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">
+                            {supplier.master_from_email ? <span className="font-mono">{supplier.master_from_email}</span> : <span className="text-slate-700">—</span>}
+                          </td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <span className="text-sm font-bold text-white">{supplier.commission}</span>
+                            <span className="text-xs text-slate-500 ml-0.5">%</span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-xs font-medium text-slate-300 capitalize">{supplier.data_from}</span>
+                          </td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <span className={cn(
+                              "inline-flex items-center gap-1 text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded border",
+                              supplier.active ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                            )}>
+                              <span className={cn("w-1 h-1 rounded-full", supplier.active ? "bg-emerald-400" : "bg-rose-400")} />
+                              {supplier.active ? 'Active' : 'Paused'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <button
+                              onClick={() => navigate(`/suppliers/mapping/${supplier.id}`)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-lg transition-colors"
+                            >
+                              <Tags className="w-3 h-3" />Field Mapping
+                            </button>
+                          </td>
+                        </motion.tr>
                       );
-                    }
-                  })()}
-                </div>
+                    })}
+                  </tbody>
+                </table>
               </div>
-
-              <div className="grid grid-cols-2 gap-4 relative z-10">
-                <div className="p-3 bg-slate-900/50 rounded-2xl border border-slate-800/50">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">Commission</p>
-                  <div className="flex items-center gap-1">
-                    <span className="text-lg font-bold text-white">{supplier.commission}</span>
-                    <span className="text-xs text-slate-500">%</span>
-                  </div>
-                </div>
-                <div className="p-3 bg-slate-900/50 rounded-2xl border border-slate-800/50">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">Source</p>
-                  <p className="text-sm font-bold text-white capitalize">{supplier.data_from}</p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => navigate(`/suppliers/mapping/${supplier.id}`)}
-                className="w-full mt-6 py-3 rounded-2xl bg-slate-800 hover:bg-indigo-500 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-slate-700 hover:border-indigo-400"
-              >
-                <Tags className="w-3.5 h-3.5" />
-                View Field Mapping
-              </button>
-            </motion.div>
-          ))}
-
-          {data.suppliers.length === 0 && (
-            <div className="col-span-full py-20 text-center glass rounded-3xl border-dashed border-2 border-slate-800">
-              <Truck className="w-12 h-12 text-slate-800 mx-auto mb-4" />
-              <p className="text-slate-500 font-medium">No data partners connected to this company.</p>
             </div>
-          )}
-        </div>
+
+          </>
+        )}
       </div>
     </div>
 
