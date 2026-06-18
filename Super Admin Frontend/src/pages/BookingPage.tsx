@@ -133,10 +133,7 @@ const BookingPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
         <div>
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center border border-sky-500/20">
-              <ClipboardList className="w-6 h-6 text-sky-400" />
-            </div>
-            <h1 className="text-4xl font-bold text-white tracking-tight">Booking <span className="text-sky-400">Ledger</span></h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2"><ClipboardList className="w-6 h-6 text-sky-400 shrink-0" />Booking <span className="text-sky-400">Ledger</span></h1>
           </div>
           <p className="text-slate-400 max-w-lg">Audit and inspect bookings across all platform operators. Select a company to begin visualization.</p>
         </div>

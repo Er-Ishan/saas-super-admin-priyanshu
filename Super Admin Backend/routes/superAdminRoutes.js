@@ -556,7 +556,20 @@ router.get("/companies/:id", async (req, res) => {
             WHERE cs.company_id = ?
             ORDER BY cs.id DESC
         `, [id]);
-        company.suppliers = supplierRows;
+        const [[{ total_fields }]] = await db.promise().query("SELECT COUNT(*) as total_fields FROM field_mappings");
+        company.suppliers = supplierRows.map(row => {
+            let hasMappedFields = false;
+            let mappedCount = 0;
+            try {
+                const mapping = typeof row.email_mapping === 'string'
+                    ? JSON.parse(row.email_mapping)
+                    : (row.email_mapping || {});
+                const values = Object.values(mapping).filter(v => typeof v === 'string' && v.trim().length > 0);
+                mappedCount = values.length;
+                hasMappedFields = mappedCount > 0;
+            } catch (_) {}
+            return { ...row, has_mapping: hasMappedFields, mapped_count: mappedCount, total_fields };
+        });
 
         res.json({ success: true, data: company });
     } catch (error) {
@@ -749,10 +762,22 @@ router.delete("/companies/:id", async (req, res) => {
     const connection = await db.promise().getConnection();
     try {
         await connection.beginTransaction();
+
+        // 1. Remove user↔role links for all users belonging to this company
+        await connection.query(
+            "DELETE ur FROM user_roles ur INNER JOIN users u ON ur.user_id = u.id WHERE u.company_id = ?", [id]
+        );
+        // 2. Delete company users
+        await connection.query("DELETE FROM users WHERE company_id = ?", [id]);
+        // 3. Delete company roles (and any remaining role↔permission links if no ON DELETE CASCADE)
+        await connection.query("DELETE FROM user_roles WHERE role_id IN (SELECT id FROM roles WHERE company_id = ?)", [id]);
+        await connection.query("DELETE FROM roles WHERE company_id = ?", [id]);
+        // 4. Delete all other company-specific data
         await connection.query("DELETE FROM company_email_settings WHERE company_id = ?", [id]);
         await connection.query("DELETE FROM company_payment_gateway WHERE company_id = ?", [id]);
         await connection.query("DELETE FROM company_suppliers WHERE company_id = ?", [id]);
         await connection.query("DELETE FROM company_parsing_email WHERE company_id = ?", [id]);
+        // 5. Finally delete the company itself
         const [result] = await connection.query("DELETE FROM companies WHERE id = ?", [id]);
         if (result.affectedRows === 0) {
             await connection.rollback();
@@ -1183,7 +1208,21 @@ router.get("/companies/:companyId/suppliers", async (req, res) => {
             WHERE cs.company_id = ?
             ORDER BY cs.id DESC
         `, [companyId]);
-        res.json({ success: true, data: rows });
+        const [[{ total_fields }]] = await db.promise().query("SELECT COUNT(*) as total_fields FROM field_mappings");
+        const data = rows.map(row => {
+            let hasMappedFields = false;
+            let mappedCount = 0;
+            try {
+                const mapping = typeof row.email_mapping === 'string'
+                    ? JSON.parse(row.email_mapping)
+                    : (row.email_mapping || {});
+                const values = Object.values(mapping).filter(v => typeof v === 'string' && v.trim().length > 0);
+                mappedCount = values.length;
+                hasMappedFields = mappedCount > 0;
+            } catch (_) {}
+            return { ...row, has_mapping: hasMappedFields, mapped_count: mappedCount, total_fields };
+        });
+        res.json({ success: true, data });
     } catch (error) {
         console.error("Fetch Company Suppliers Error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch company suppliers" });

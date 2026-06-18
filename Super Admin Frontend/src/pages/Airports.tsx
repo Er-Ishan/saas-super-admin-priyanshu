@@ -136,7 +136,7 @@ const Airports: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Global Airports</h1>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Plane className="w-6 h-6 text-sky-400 shrink-0" />Global Airports</h1>
           <p className="text-slate-400 text-sm mt-0.5">Manage the airport registry used across all parking operators.</p>
         </div>
         <div className="flex items-center gap-2">

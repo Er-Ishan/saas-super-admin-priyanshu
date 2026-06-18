@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Mail, Globe, MapPin, Phone, Loader2, ArrowLeft,
   User, Clock, Hash, CreditCard, Server, Lock, AtSign, Key,
-  Webhook, ChevronRight, Save, ShieldAlert, CheckCircle2
+  Webhook, ChevronRight, Save, ShieldAlert, CheckCircle2, Settings
 } from 'lucide-react';
 import api from '../lib/axios';
 import { cn } from '../lib/utils';
@@ -208,7 +208,7 @@ const CompanySettings: React.FC = () => {
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back to {companyData.name || 'Company'}
         </button>
-        <h1 className="text-4xl font-bold text-white mb-3">Company Settings</h1>
+        <h1 className="text-2xl font-bold text-white mb-3 flex items-center gap-2"><Settings className="w-6 h-6 text-sky-400 shrink-0" />Company Settings</h1>
         <p className="text-slate-400">Manage all configuration for <span className="text-white font-semibold">{companyData.name}</span></p>
       </div>
 

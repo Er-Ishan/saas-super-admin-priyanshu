@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Globe, Mail, Plus, Trash2, Loader2, ArrowLeft } from 'lucide-react';
+import { Globe, Mail, Plus, Trash2, Loader2, ArrowLeft, Truck } from 'lucide-react';
 import api from '../lib/axios';
 
 const RegisterSupplier: React.FC = () => {
@@ -63,7 +63,7 @@ const RegisterSupplier: React.FC = () => {
             <Globe className="w-6 h-6 text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">Register New Supplier</h1>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Truck className="w-6 h-6 text-sky-400 shrink-0" />Register New Supplier</h1>
             <p className="text-slate-400 mt-1">Add a master supplier to the global registry.</p>
           </div>
         </div>

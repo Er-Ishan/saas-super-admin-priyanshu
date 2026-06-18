@@ -98,7 +98,7 @@ const EditAirport: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <Plane className="w-4 h-4 text-sky-400" />
-              <h1 className="text-xl sm:text-2xl font-bold text-white">Edit Airport</h1>
+              <h1 className="text-2xl font-bold text-white">Edit Airport</h1>
             </div>
             <p className="text-slate-500 text-xs">
               Update details for <span className="text-slate-300 font-semibold">{formData.airport_name || '—'}</span>

@@ -104,7 +104,7 @@ const FieldMappings: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Field Mappings</h1>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Database className="w-6 h-6 text-sky-400 shrink-0" />Field Mappings</h1>
             <span className="bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded-lg text-xs font-bold border border-slate-700">
               {mappings.length} fields
             </span>

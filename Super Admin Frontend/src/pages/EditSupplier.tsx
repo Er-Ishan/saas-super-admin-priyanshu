@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Globe, Mail, Plus, Trash2, Loader2, ArrowLeft } from 'lucide-react';
+import { Globe, Mail, Plus, Trash2, Loader2, ArrowLeft, Truck } from 'lucide-react';
 import api from '../lib/axios';
 
 const EditSupplier: React.FC = () => {
@@ -102,7 +102,7 @@ const EditSupplier: React.FC = () => {
             <Globe className="w-6 h-6 text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">Edit Supplier</h1>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Truck className="w-6 h-6 text-sky-400 shrink-0" />Edit Supplier</h1>
             <p className="text-slate-400 mt-1">Update details for this master supplier.</p>
           </div>
         </div>

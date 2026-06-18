@@ -34,6 +34,9 @@ interface CompanySupplier {
   supplier_name: string;
   supplier_email: string;
   supplier_contact: string;
+  has_mapping: boolean;
+  mapped_count: number;
+  total_fields: number;
 }
 
 interface Company {
@@ -149,7 +152,7 @@ const Suppliers: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Suppliers Management</h1>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Truck className="w-6 h-6 text-sky-400 shrink-0" />Suppliers Management</h1>
           </div>
           <p className="text-slate-500 text-xs">Manage the global supplier registry and company-specific data pipelines</p>
         </div>
@@ -306,65 +309,140 @@ const Suppliers: React.FC = () => {
                   <p className="text-slate-400 text-sm">No suppliers assigned to this company yet.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {companySuppliers.map((cs) => {
-                    const emails = getEmails(cs.supplier_from_email);
-                    return (
-                      <motion.div layout key={cs.id} className="bg-slate-900/50 border border-slate-800/50 rounded-xl p-4 flex flex-col relative overflow-hidden group">
-                        <div className={cn("absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 rounded-full opacity-10", cs.active ? "bg-emerald-500" : "bg-rose-500")} />
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center border border-slate-700 shrink-0">
-                              <Truck className="w-4 h-4 text-indigo-400" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-white">{cs.supplier_name}</p>
-                              <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                                <CheckCircle2 className={cn("w-3 h-3", cs.active ? "text-emerald-500" : "text-slate-700")} />
-                                {cs.active ? 'Actively Syncing' : 'Paused'}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-1 relative z-10">
-                            <button onClick={() => navigate(`mapping/${cs.id}`)} title="Field Mapping" className="p-1.5 text-indigo-400 hover:text-white hover:bg-indigo-500/10 rounded-lg transition-all">
-                              <Tags className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => setDeleteTarget({ id: cs.id, name: cs.supplier_name, type: 'assignment' })} className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1 p-3 bg-slate-950/50 rounded-xl border border-slate-800/50 mb-3">
-                          <p className="w-full text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-1">Parsing Emails</p>
-                          {emails.map((email, idx) => (
-                            <span key={idx} className="inline-flex items-center gap-1 bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800 text-[10px] font-mono text-indigo-300">
-                              <Mail className="w-2.5 h-2.5 shrink-0" />{email}
-                            </span>
+                <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-800">
+                          {['S.N', 'Supplier', 'Parsing Emails', 'Commission', 'Source', 'Status', 'Mapped Fields', 'Actions'].map(h => (
+                            <th key={h} className={cn(
+                              "text-[10px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap bg-slate-900/60",
+                              ['S.N', 'Commission', 'Status', 'Actions'].includes(h) ? 'text-center' : 'text-left'
+                            )}>
+                              {h}
+                            </th>
                           ))}
-                        </div>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/40">
+                        {companySuppliers.map((cs, index) => {
+                          const emails = getEmails(cs.supplier_from_email);
+                          return (
+                            <motion.tr
+                              layout
+                              key={cs.id}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: index * 0.03 }}
+                              className="hover:bg-slate-800/30 transition-colors"
+                            >
+                              {/* S.N */}
+                              <td className="px-4 py-3 text-xs text-slate-600 font-mono text-center whitespace-nowrap">{index + 1}</td>
 
-                        <div className="grid grid-cols-2 gap-2 mb-4">
-                          <div className="p-2.5 bg-slate-950/50 rounded-xl border border-slate-800/50">
-                            <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Commission</p>
-                            <p className="text-base font-bold text-white">{cs.commission}%</p>
-                          </div>
-                          <div className="p-2.5 bg-slate-950/50 rounded-xl border border-slate-800/50">
-                            <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Data Source</p>
-                            <p className="text-sm font-bold text-white capitalize">{cs.data_from}</p>
-                          </div>
-                        </div>
+                              {/* Supplier */}
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700 shrink-0">
+                                    <Truck className="w-3.5 h-3.5 text-indigo-400" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-semibold text-white">{cs.supplier_name}</p>
+                                    <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                                      <CheckCircle2 className={cn("w-2.5 h-2.5", cs.active ? "text-emerald-500" : "text-slate-700")} />
+                                      {cs.active ? 'Actively Syncing' : 'Paused'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
 
-                        <button
-                          onClick={() => handleToggleActive(cs)}
-                          className={cn("w-full py-2.5 rounded-xl font-bold text-sm transition-all border mt-auto",
-                            cs.active ? "bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20" : "bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20 hover:scale-[1.02]")}
-                        >
-                          {cs.active ? 'Deactivate Sync' : 'Activate Sync'}
-                        </button>
-                      </motion.div>
-                    );
-                  })}
+                              {/* Parsing Emails */}
+                              <td className="px-4 py-3">
+                                <div className="flex flex-wrap gap-1">
+                                  {emails.map((email, idx) => (
+                                    <span key={idx} className="inline-flex items-center gap-1 bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800 text-[10px] font-mono text-indigo-300">
+                                      <Mail className="w-2.5 h-2.5 shrink-0" />{email}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+
+                              {/* Commission */}
+                              <td className="px-4 py-3 text-center whitespace-nowrap">
+                                <span className="text-sm font-bold text-white">{cs.commission}</span>
+                                <span className="text-xs text-slate-500 ml-0.5">%</span>
+                              </td>
+
+                              {/* Source */}
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className="text-xs font-medium text-slate-300 capitalize">{cs.data_from}</span>
+                              </td>
+
+                              {/* Status */}
+                              <td className="px-4 py-3 text-center whitespace-nowrap">
+                                <span className={cn(
+                                  "inline-flex items-center gap-1 text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded border",
+                                  cs.active ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                )}>
+                                  <span className={cn("w-1 h-1 rounded-full", cs.active ? "bg-emerald-400" : "bg-rose-400")} />
+                                  {cs.active ? 'Active' : 'Paused'}
+                                </span>
+                              </td>
+
+                              {/* Mapped Fields */}
+                              <td className="px-4 py-3 text-center whitespace-nowrap">
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className={cn("text-xs font-bold", cs.has_mapping ? "text-emerald-400" : "text-slate-500")}>
+                                    {cs.mapped_count} / {cs.total_fields}
+                                  </span>
+                                  <div className="w-16 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                    <div
+                                      className={cn("h-full rounded-full transition-all", cs.has_mapping ? "bg-emerald-500" : "bg-slate-700")}
+                                      style={{ width: cs.total_fields > 0 ? `${Math.round((cs.mapped_count / cs.total_fields) * 100)}%` : '0%' }}
+                                    />
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Actions */}
+                              <td className="px-4 py-3 text-center whitespace-nowrap">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={() => navigate(`mapping/${cs.id}`)}
+                                    title="Field Mapping"
+                                    className={cn(
+                                      "inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition-colors",
+                                      cs.has_mapping
+                                        ? "text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20"
+                                        : "text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/20"
+                                    )}
+                                  >
+                                    <Tags className="w-3 h-3" />Mapping
+                                  </button>
+                                  <button
+                                    onClick={() => handleToggleActive(cs)}
+                                    className={cn(
+                                      "inline-flex items-center px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition-colors",
+                                      cs.active
+                                        ? "text-rose-400 bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20"
+                                        : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20"
+                                    )}
+                                  >
+                                    {cs.active ? 'Deactivate' : 'Activate'}
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteTarget({ id: cs.id, name: cs.supplier_name, type: 'assignment' })}
+                                    className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/20"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </motion.tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </motion.div>

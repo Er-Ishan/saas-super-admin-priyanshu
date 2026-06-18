@@ -169,11 +169,8 @@ const SupportCenter: React.FC = () => {
       <div className="flex w-[400px] flex-col rounded-3xl border border-slate-800/50 bg-slate-900/30 backdrop-blur-xl overflow-hidden">
         <div className="p-8 border-b border-slate-800/50">
           <div className="flex items-center gap-4 mb-8 text-white">
-            <div className="p-3 bg-sky-500/10 rounded-2xl border border-sky-500/20 shadow-lg shadow-sky-500/10">
-              <Shield className="w-6 h-6 text-sky-400" />
-            </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Support <span className="text-sky-400">Center</span></h1>
+              <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><MessageSquare className="w-6 h-6 text-sky-400 shrink-0" />Support <span className="text-sky-400">Center</span></h1>
               <p className="text-xs text-slate-500 font-medium">Resolving admin tickets</p>
             </div>
           </div>

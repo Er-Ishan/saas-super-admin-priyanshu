@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Building2, Mail, Globe, MapPin, Phone, Loader2,
-  ArrowLeft, ShieldCheck, MailWarning, LayoutGrid,
+  Building2, Mail, Globe, Loader2,
+  ArrowLeft, ShieldCheck, LayoutGrid,
   Truck, CheckCircle2, Tags, ExternalLink, ShieldAlert,
   Settings, X, Save, Lock, Plus
 } from 'lucide-react';
@@ -25,6 +25,9 @@ interface Supplier {
   data_from: string;
   commission: string;
   master_from_email: string;
+  has_mapping: boolean;
+  mapped_count: number;
+  total_fields: number;
 }
 
 interface CompanyDetails {
@@ -200,7 +203,7 @@ const CompanyDetails: React.FC = () => {
     <>
       <div className="w-full min-w-0 pb-10">
       {/* Header & Navigation */}
-      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:flex-wrap gap-4 mb-8">
 
         {/* Back button */}
         <button
@@ -237,19 +240,19 @@ const CompanyDetails: React.FC = () => {
         {/* Company name + ID — grows to fill space */}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-0.5">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white truncate">{data.name}</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white break-words min-w-0">{data.name}</h1>
             <span className={cn(
-              "text-[9px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-md shrink-0",
+              "text-xs uppercase tracking-widest font-bold px-2.5 py-1 rounded-md shrink-0",
               data.active ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
             )}>
               {data.active ? 'Active' : 'Inactive'}
             </span>
           </div>
-          <p className="text-slate-500 text-xs">Company ID: <span className="text-slate-300">#{data.id}</span></p>
+          <p className="text-slate-500 text-sm">Company ID: <span className="text-slate-300">#{data.id}</span></p>
         </div>
 
         {/* Service toggle buttons — right side on desktop */}
-        <div className="flex flex-wrap gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2 sm:ml-auto shrink-0">
           <button
             onClick={() => toggleStatus('active')}
             disabled={isUpdating.active}
@@ -261,8 +264,8 @@ const CompanyDetails: React.FC = () => {
               : <div className={cn("w-2.5 h-2.5 rounded-full transition-all duration-500 shrink-0",
                   data.active ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-700 group-hover:bg-slate-500")} />}
             <div className="flex flex-col items-start">
-              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider leading-none">Company</span>
-              <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">Operational</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none">Company</span>
+              <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">Operational</span>
             </div>
           </button>
 
@@ -277,172 +280,121 @@ const CompanyDetails: React.FC = () => {
               : <div className={cn("w-2.5 h-2.5 rounded-full transition-all duration-500 shrink-0",
                   data.email_parsing ? "bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]" : "bg-slate-700 group-hover:bg-slate-500")} />}
             <div className="flex flex-col items-start">
-              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider leading-none">Service</span>
-              <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">Email Parsing</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none">Service</span>
+              <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">Email Parsing</span>
             </div>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
-        {/* Contact Info Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass p-5 md:p-8 rounded-2xl border-slate-800 relative overflow-hidden group"
-        >
-          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-            <Building2 className="w-32 h-32 text-white" />
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-slate-900/40 border border-slate-800/50 rounded-xl overflow-hidden mb-6"
+      >
+        {/* ── General Information header ── */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/60">
+          <div className="flex items-center gap-2">
+            <LayoutGrid className="w-3.5 h-3.5 text-sky-400" />
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">General Information</span>
           </div>
-          <div className="flex items-center justify-between mb-8 relative z-10">
-            <h3 className="text-xl font-bold text-white flex items-center gap-3">
-              <LayoutGrid className="w-5 h-5 text-sky-400" />
-              General Information
-            </h3>
+          <button
+            onClick={() => navigate(`/companies/${id}/settings`)}
+            title="Edit Details"
+            className="p-1.5 text-slate-500 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg transition-all"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-slate-800">
+                {['Official Email', 'Domain / Website', 'Contact No.', 'Support Email', 'Support Contact', 'Address'].map(h => (
+                  <th key={h} className="text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-3 text-left whitespace-nowrap bg-slate-900/40">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="hover:bg-slate-800/20 transition-colors">
+                <td className="px-4 py-4 text-sm text-white whitespace-nowrap">{data.email || <span className="text-slate-700">—</span>}</td>
+                <td className="px-4 py-4 text-sm text-white whitespace-nowrap">{data.domain || <span className="text-slate-700">—</span>}</td>
+                <td className="px-4 py-4 text-sm text-white whitespace-nowrap">{data.mobile_no || <span className="text-slate-700">—</span>}</td>
+                <td className="px-4 py-4 text-sm text-white whitespace-nowrap">{data.support_email_address || <span className="text-slate-700">—</span>}</td>
+                <td className="px-4 py-4 text-sm text-white whitespace-nowrap">{data.support_contact_no || <span className="text-slate-700">—</span>}</td>
+                <td className="px-4 py-4 text-sm text-white">{data.address || <span className="text-slate-700">—</span>}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Email Parsing Pipeline header ── */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-b border-slate-800 bg-slate-900/60">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Email Parsing Pipeline</span>
+          </div>
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => navigate(`/companies/${id}/settings`)}
-              className="p-2 text-slate-500 hover:text-sky-400 hover:bg-sky-500/10 rounded-xl transition-all cursor-pointer"
-              title="Edit Details"
+              onClick={openParsingModal}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-lg transition-all"
             >
-              <Settings className="w-5 h-5" />
+              <Settings className="w-3 h-3" />
+              {data.parsing_info ? 'Edit Config' : 'Setup Pipeline'}
             </button>
+            {data.email_parsing ? (
+              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
+                <CheckCircle2 className="w-2.5 h-2.5" />ACTIVE
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-500 bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded">
+                <ShieldAlert className="w-2.5 h-2.5" />DISABLED
+              </span>
+            )}
           </div>
-          <div className="space-y-6 relative z-10">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-800 flex-shrink-0">
-                <Mail className="w-5 h-5 text-slate-500" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Official Email</p>
-                <p className="text-white font-medium">{data.email || 'Not provided'}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-800 flex-shrink-0">
-                <Globe className="w-5 h-5 text-slate-500" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Domain / Website</p>
-                <p className="text-white font-medium">{data.domain || 'Not provided'}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-800 flex-shrink-0">
-                <Phone className="w-5 h-5 text-slate-500" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Contact Number</p>
-                <p className="text-white font-medium">{data.mobile_no || 'Not provided'}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-800 flex-shrink-0">
-                <Mail className="w-5 h-5 text-indigo-400" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Support Email</p>
-                <p className="text-white font-medium">{data.support_email_address || 'Not provided'}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-800 flex-shrink-0">
-                <Phone className="w-5 h-5 text-indigo-400" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Support Contact</p>
-                <p className="text-white font-medium">{data.support_contact_no || 'Not provided'}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-800 flex-shrink-0">
-                <MapPin className="w-5 h-5 text-slate-500" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Head Office Address</p>
-                <p className="text-white font-medium leading-relaxed">{data.address || 'No address registered'}</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        </div>
 
-        {/* Email Parsing Config Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="lg:col-span-2 glass p-5 md:p-8 rounded-2xl border-slate-800 relative overflow-hidden group"
-        >
-          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-            <MailWarning className="w-32 h-32 text-white" />
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-slate-800">
+                {['Parsing Inbox', 'IMAP Host', 'Auth Token'].map(h => (
+                  <th key={h} className="text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-3 text-left whitespace-nowrap bg-slate-900/40">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="hover:bg-slate-800/20 transition-colors">
+                <td className="px-4 py-4 text-sm font-mono">
+                  {data.parsing_info?.company_parsing_email
+                    ? <span className="text-indigo-400">{data.parsing_info.company_parsing_email}</span>
+                    : <span className="text-slate-700">No email configured</span>}
+                </td>
+                <td className="px-4 py-4 text-sm font-mono text-white whitespace-nowrap">
+                  {data.parsing_info?.email_host || <span className="text-slate-500 font-sans">Automatic detection</span>}
+                </td>
+                <td className="px-4 py-4 text-sm font-mono">
+                  {data.parsing_info?.email_password
+                    ? <span className="tracking-widest text-emerald-400">••••••••••••</span>
+                    : <span className="text-slate-700">None established</span>}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
-            <h3 className="text-base md:text-xl font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0" />
-              Email Parsing Pipeline
-            </h3>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={openParsingModal}
-                className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 group"
-              >
-                <Settings className="w-3.5 h-3.5 group-hover:rotate-45 transition-transform" />
-                {data.parsing_info ? 'Edit Config' : 'Setup Pipeline'}
-              </button>
-              {data.email_parsing ? (
-                <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2.5 py-1.5 rounded-xl border border-emerald-500/20 text-[10px] font-bold whitespace-nowrap">
-                  <CheckCircle2 className="w-3 h-3" />
-                  ACTIVE
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 bg-slate-800 text-slate-500 px-2.5 py-1.5 rounded-xl border border-slate-700 text-[10px] font-bold">
-                  <ShieldAlert className="w-3 h-3" />
-                  DISABLED
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
-            <div className="space-y-6">
-              <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800/50">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Target Parsing Box</p>
-                <div className="flex items-center gap-3 text-indigo-400 font-mono">
-                  <Mail className="w-4 h-4" />
-                  <span className="text-sm">{data.parsing_info?.company_parsing_email || 'No email configured'}</span>
-                </div>
-              </div>
-              <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800/50">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">IMAP Hosting Server</p>
-                <div className="flex items-center gap-3 text-white font-mono">
-                  <Globe className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm">{data.parsing_info?.email_host || 'Automatic detection'}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-between">
-              <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800/50">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Auth Credentials</p>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[10px] text-slate-600 mb-1">Access Token / Password</p>
-                    <p className="text-white font-mono tracking-tighter overflow-hidden truncate">
-                      {data.parsing_info?.email_password ? '••••••••••••••••' : 'None established'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  <span className="text-indigo-400 font-bold">Note:</span> This configuration allows our processing engine to securely monitor and extract booking data from the company's designated mailbox.
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+        <div className="px-4 py-3 border-t border-slate-800/50 bg-indigo-500/5">
+          <p className="text-xs text-slate-500 leading-relaxed">
+            <span className="text-indigo-400 font-bold">Note: </span>
+            This configuration allows our processing engine to securely monitor and extract booking data from the company's designated mailbox.
+          </p>
+        </div>
+      </motion.div>
 
       {/* Suppliers Section */}
       <div className="space-y-4">
@@ -475,7 +427,7 @@ const CompanyDetails: React.FC = () => {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="border-b border-slate-800">
-                      {['S.N', 'Supplier Name', 'From Emails', 'Master Email', 'Commission', 'Source', 'Status', 'Actions'].map(h => (
+                      {['S.N', 'Supplier Name', 'From Emails', 'Master Email', 'Commission', 'Source', 'Status', 'Mapped Fields', 'Actions'].map(h => (
                         <th key={h} className={cn(
                           "text-[10px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3 whitespace-nowrap bg-slate-900/60",
                           h === 'S.N' || h === 'Commission' || h === 'Status' || h === 'Actions' ? 'text-center' : 'text-left'
@@ -542,12 +494,34 @@ const CompanyDetails: React.FC = () => {
                               {supplier.active ? 'Active' : 'Paused'}
                             </span>
                           </td>
+                          {/* Mapped Fields */}
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <div className="flex flex-col items-center gap-1">
+                              <span className={cn("text-xs font-bold", supplier.has_mapping ? "text-emerald-400" : "text-slate-500")}>
+                                {supplier.mapped_count} / {supplier.total_fields}
+                              </span>
+                              <div className="w-16 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                <div
+                                  className={cn("h-full rounded-full transition-all", supplier.has_mapping ? "bg-emerald-500" : "bg-slate-700")}
+                                  style={{ width: supplier.total_fields > 0 ? `${Math.round((supplier.mapped_count / supplier.total_fields) * 100)}%` : '0%' }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Field Mapping button */}
                           <td className="px-4 py-3 text-center whitespace-nowrap">
                             <button
-                              onClick={() => navigate(`/suppliers/mapping/${supplier.id}`)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-lg transition-colors"
+                              onClick={() => navigate(`/suppliers/mapping/${supplier.id}?supplierName=${encodeURIComponent(supplier.supplier_name)}&companyName=${encodeURIComponent(data.name)}`)}
+                              className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-lg border transition-colors",
+                                supplier.has_mapping
+                                  ? "text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20"
+                                  : "text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/20"
+                              )}
                             >
-                              <Tags className="w-3 h-3" />Field Mapping
+                              <Tags className="w-3 h-3" />
+                              Field Mapping
                             </button>
                           </td>
                         </motion.tr>

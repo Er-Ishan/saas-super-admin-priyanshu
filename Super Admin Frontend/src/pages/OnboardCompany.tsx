@@ -164,7 +164,7 @@ const OnboardCompany: React.FC = () => {
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back to Companies
         </button>
-        <h1 className="text-4xl font-bold text-white mb-3 flex items-center gap-3">
+        <h1 className="text-2xl font-bold text-white mb-3 flex items-center gap-3">
           <Sparkles className="w-8 h-8 text-sky-400" />
           Onboard New Company
         </h1>
