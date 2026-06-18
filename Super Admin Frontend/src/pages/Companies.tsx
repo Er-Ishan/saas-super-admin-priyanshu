@@ -81,6 +81,7 @@ const Companies: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<Company | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [activePopup, setActivePopup] = useState<ActivePopup | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const filteredCompanies = companies.filter(c =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,12 +119,13 @@ const Companies: React.FC = () => {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
+    setDeleteError(null);
     try {
       await api.delete(`/companies/${deleteTarget.id}`);
       setCompanies(prev => prev.filter(c => c.id !== deleteTarget.id));
       setDeleteTarget(null);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setDeleteError(err.response?.data?.message || 'Failed to delete company. Please try again.');
     } finally {
       setDeleting(false);
     }
@@ -201,15 +203,15 @@ const Companies: React.FC = () => {
                     {/* <TH>Owner</TH> */}
                     {/* <TH>Reg No</TH> */}
                     <TH>Email</TH>
-                    <TH>Support Email</TH>
+                    {/* <TH>Support Email</TH> */}
                     <TH>Domain</TH>
                     <TH>Phone</TH>
-                    <TH>Support Phone</TH>
+                    {/* <TH>Support Phone</TH> */}
                     <TH>Type</TH>
                     <TH>Category</TH>
-                    <TH>Ref Prefix</TH>
-                    <TH>Office Hours</TH>
-                    <TH>Address</TH>
+                    {/* <TH>Ref Prefix</TH> */}
+                    {/* <TH>Office Hours</TH> */}
+                    {/* <TH>Address</TH> */}
                     <TH center>Status</TH>
                     <TH center>Email Settings</TH>
                     <TH center>Payment GW</TH>
@@ -233,7 +235,7 @@ const Companies: React.FC = () => {
                           <button onClick={() => navigate(`/companies/${company.id}`)} title="View" className="p-1 text-slate-500 hover:text-sky-400 hover:bg-sky-500/10 rounded transition-all">
                             <ExternalLink className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => navigate(`/companies/${company.id}`)} title="Edit" className="p-1 text-slate-500 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-all">
+                          <button onClick={() => navigate(`/companies/${company.id}/settings`)} title="Edit" className="p-1 text-slate-500 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-all">
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={() => setDeleteTarget(company)} title="Delete" className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-all">
@@ -257,10 +259,10 @@ const Companies: React.FC = () => {
                       {/* <Cell><span className="truncate max-w-[110px] block" title={company.owner_name}>{company.owner_name || <Dash />}</span></Cell> */}
                       {/* <Cell><span className="font-mono text-slate-400">{company.registration_no || <Dash />}</span></Cell> */}
                       <Cell><span className="truncate max-w-[150px] block text-slate-400" title={company.email}>{company.email || <Dash />}</span></Cell>
-                      <Cell><span className="truncate max-w-[150px] block text-slate-400" title={company.support_email_address}>{company.support_email_address || <Dash />}</span></Cell>
+                      {/* <Cell><span className="truncate max-w-[150px] block text-slate-400" title={company.support_email_address}>{company.support_email_address || <Dash />}</span></Cell> */}
                       <Cell><span className="truncate max-w-[120px] block text-slate-400" title={company.domain}>{company.domain || <Dash />}</span></Cell>
                       <Cell><span className="text-slate-400">{company.mobile_no || <Dash />}</span></Cell>
-                      <Cell><span className="text-slate-400">{company.support_contact_no || <Dash />}</span></Cell>
+                      {/* <Cell><span className="text-slate-400">{company.support_contact_no || <Dash />}</span></Cell> */}
 
                       {/* Business Type */}
                       <Cell>
@@ -276,15 +278,14 @@ const Companies: React.FC = () => {
                           : <Dash />}
                       </Cell>
 
-                      {/* Ref Prefix */}
-                      <Cell>
+                      {/* <Cell>
                         {company.ref_prefix
                           ? <span className="font-mono text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded text-[10px]">{company.ref_prefix}</span>
                           : <Dash />}
-                      </Cell>
+                      </Cell> */}
 
-                      <Cell><span className="text-slate-400 truncate max-w-[120px] block">{company.office_hours || <Dash />}</span></Cell>
-                      <Cell><span className="truncate max-w-[130px] block text-slate-400" title={company.address}>{company.address || <Dash />}</span></Cell>
+                      {/* <Cell><span className="text-slate-400 truncate max-w-[120px] block">{company.office_hours || <Dash />}</span></Cell> */}
+                      {/* <Cell><span className="truncate max-w-[130px] block text-slate-400" title={company.address}>{company.address || <Dash />}</span></Cell> */}
 
                       {/* Status */}
                       <Cell className="text-center">
@@ -463,8 +464,11 @@ const Companies: React.FC = () => {
                   <X className="w-4 h-4" />
                 </button>
               </div>
+              {deleteError && (
+                <p className="mt-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{deleteError}</p>
+              )}
               <div className="flex gap-3 mt-5">
-                <button onClick={() => setDeleteTarget(null)} className="flex-1 px-4 py-2 text-xs font-medium text-slate-400 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors">
+                <button onClick={() => { setDeleteTarget(null); setDeleteError(null); }} className="flex-1 px-4 py-2 text-xs font-medium text-slate-400 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors">
                   Cancel
                 </button>
                 <button

@@ -744,6 +744,31 @@ router.patch("/companies/:id/status", async (req, res) => {
     }
 });
 
+router.delete("/companies/:id", async (req, res) => {
+    const { id } = req.params;
+    const connection = await db.promise().getConnection();
+    try {
+        await connection.beginTransaction();
+        await connection.query("DELETE FROM company_email_settings WHERE company_id = ?", [id]);
+        await connection.query("DELETE FROM company_payment_gateway WHERE company_id = ?", [id]);
+        await connection.query("DELETE FROM company_suppliers WHERE company_id = ?", [id]);
+        await connection.query("DELETE FROM company_parsing_email WHERE company_id = ?", [id]);
+        const [result] = await connection.query("DELETE FROM companies WHERE id = ?", [id]);
+        if (result.affectedRows === 0) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: "Company not found" });
+        }
+        await connection.commit();
+        res.json({ success: true, message: "Company deleted successfully" });
+    } catch (error) {
+        await connection.rollback();
+        console.error("Delete Company Error:", error);
+        res.status(500).json({ success: false, message: "Failed to delete company" });
+    } finally {
+        connection.release();
+    }
+});
+
 router.put("/companies/:id/parsing-info", async (req, res) => {
     const { id } = req.params;
     const { company_parsing_email, email_password, email_host } = req.body;
