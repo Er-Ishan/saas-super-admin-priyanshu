@@ -447,10 +447,16 @@ router.get("/field-mappings", async (req, res) => {
         const [rows] = await db.promise().query("SELECT * FROM field_mappings ORDER BY id ASC");
 
         // Parse JSON strings for aliases
-        const mappings = rows.map(row => ({
-            ...row,
-            alias: JSON.parse(row.alias || "[]")
-        }));
+        const mappings = rows.map(row => {
+            let alias = [];
+            try {
+                const parsed = JSON.parse(row.alias || "[]");
+                alias = Array.isArray(parsed) ? parsed : [];
+            } catch (_) {
+                alias = [];
+            }
+            return { ...row, alias };
+        });
 
         res.json({ success: true, data: mappings });
     } catch (error) {
@@ -1279,7 +1285,7 @@ router.get("/company-suppliers/:id/mapping", async (req, res) => {
 
         res.json({
             success: true,
-            mapping: typeof csRows[0].email_mapping === 'string' ? JSON.parse(csRows[0].email_mapping) : csRows[0].email_mapping,
+            mapping: (() => { try { return typeof csRows[0].email_mapping === 'string' ? JSON.parse(csRows[0].email_mapping) : (csRows[0].email_mapping || {}); } catch (_) { return {}; } })(),
             fields: fmRows.map(row => row.db_column),
             debug_columns: columnNames // Send this so we can see it in logs/UI
         });
@@ -1319,7 +1325,13 @@ router.post("/company-suppliers/:id/mapping", async (req, res) => {
 
             const [rows] = await connection.query("SELECT id, alias FROM field_mappings WHERE db_column = ?", [dbColumn]);
             if (rows.length > 0) {
-                const currentAliases = JSON.parse(rows[0].alias || "[]");
+                let currentAliases = [];
+                try {
+                    const parsed = JSON.parse(rows[0].alias || "[]");
+                    currentAliases = Array.isArray(parsed) ? parsed : [];
+                } catch (_) {
+                    currentAliases = [];
+                }
                 let updated = false;
 
                 newAliases.forEach(alias => {
